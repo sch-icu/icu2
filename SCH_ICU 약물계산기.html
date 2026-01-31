@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SCH ICU 약물 계산기</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #f0f2f5; --bg-header: #0055b8; --text-main: #333;
+            --bg-card: #ffffff; --border-color: #e0e0e0;
+            --bg-input-yellow: #fffde7; --text-input: #000;
+            --bg-th: #546e7a; --text-th: #fff;
+            --bg-red: #ffebee; --text-red: #c62828;
+            --bg-blue: #e3f2fd; --text-blue: #1565c0;
+            --bg-green: #e8f5e9; --text-green: #2e7d32;
+            
+            --u-std: #1565c0; --u-vaso: #d32f2f; --u-mcgmin: #2e7d32;
+            --u-mghr: #ef6c00; --u-mcghr: #8e24aa;
+        }
+        body.dark-mode {
+            --bg-body: #121212; --bg-header: #1a237e; --text-main: #e0e0e0;
+            --bg-card: #1e1e1e; --border-color: #333;
+            --bg-input-yellow: #2c2c2c; --text-input: #fff000; --bg-th: #37474f;
+            --bg-red: #3e2723; --text-red: #ffcdd2;
+            --bg-blue: #0d47a1; --text-blue: #bbdefb;
+            --bg-green: #1b5e20; --text-green: #c8e6c9;
+            --u-std: #90caf9; --u-vaso: #ef9a9a; --u-mcgmin: #a5d6a7;
+            --u-mghr: #ffcc80; --u-mcghr: #ce93d8;
+        }
+        body { margin:0; padding:0; font-family:'Noto Sans KR',sans-serif; background:var(--bg-body); color:var(--text-main); -webkit-text-size-adjust:100%; transition:0.3s; }
+        
+        /* Header */
+        .header { background:var(--bg-header); padding:20px 10px 15px 10px; position:sticky; top:0; z-index:1000; box-shadow:0 2px 8px rgba(0,0,0,0.3); display:flex; flex-direction:column; align-items:center; }
+        .btn-darkmode { position:absolute; top:15px; right:15px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.3); color:#fff; border-radius:50%; width:40px; height:40px; font-size:1.2rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .hospital-title { margin:0; font-size:2.3rem; font-weight:900; color:white; text-align:center; margin-bottom:5px; margin-top:15px; text-shadow:0 2px 4px rgba(0,0,0,0.3); line-height:1.1; }
+        .dept-title { margin:0 0 10px 0; font-size:1.5rem; font-weight:500; color:#bbdefb; opacity:0.95; }
+
+        /* Dept Selector Colors (Bright/Pastel) */
+        .dept-switch-row { display:flex; width:100%; max-width:600px; gap:6px; margin-bottom:12px; }
+        .dept-btn {
+            flex: 1; padding: 10px 0;
+            border: 1px solid rgba(255,255,255,0.4);
+            background: rgba(0,0,0,0.25);
+            color: #ccc;
+            border-radius: 8px;
+            font-size: 1rem; font-weight: 800; cursor: pointer;
+            transition: 0.2s; white-space: nowrap;
+        }
+        #btn-sicu.active {
+            background: #4db6ac; /* Bright Teal */
+            color: white; border-color: #80cbc4;
+            box-shadow: 0 0 10px rgba(77,182,172, 0.6);
+            transform: scale(1.02);
+        }
+        #btn-ccu.active {
+            background: #f06292; /* Bright Pink */
+            color: white; border-color: #f48fb1;
+            box-shadow: 0 0 10px rgba(240,98,146, 0.6);
+            transform: scale(1.02);
+        }
+        #btn-micu.active {
+            background: #7986cb; /* Bright Indigo */
+            color: white; border-color: #9fa8da;
+            box-shadow: 0 0 10px rgba(121,134,203, 0.6);
+            transform: scale(1.02);
+        }
+
+        .control-top-row { display:flex; width:100%; max-width:600px; gap:8px; margin-bottom:8px; justify-content: space-between; }
+        .weight-container { flex:0 0 auto; background: #d32f2f; border:1px solid rgba(255,255,255,0.3); border-radius:8px; padding:5px 15px; display:flex; align-items:center; gap:8px; }
+        .weight-label { font-size:1rem; font-weight:700; color:white; white-space:nowrap; }
+        .weight-input { width:70px; height:42px; border:2px solid #ffcdd2; border-radius:6px; text-align:center; font-size:1.7rem; font-weight:900; background:#fff; color:#d32f2f; }
+        
+        .btn-group { display:flex; gap:4px; flex:1; }
+        .btn-common {
+            flex:1; border-radius:8px; font-weight:800; cursor:pointer; 
+            box-shadow:0 2px 4px rgba(0,0,0,0.2); padding:12px 0; 
+            font-size: 0.8rem; letter-spacing: -0.5px; white-space: nowrap; 
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-free-calc { background:#00c853; color:#fff; border:2px solid #00a152; }
+        .btn-vent { background:#009688; color:#fff; border:2px solid #00796b; }
+        .btn-heparin { background:#ff9800; color:#fff; border:2px solid #f57c00; }
+        .btn-setting { background:#fdd835; color:#000; border:2px solid #fbc02d; }
+
+        .mode-row { display:flex; gap:5px; width:100%; max-width:600px; }
+        .mode-btn { flex:1; border:none; border-radius:6px; padding:12px 0; font-size:1rem; font-weight:700; cursor:pointer; background:rgba(0,0,0,0.25); color:#cfd8dc; transition:0.2s; white-space:nowrap; }
+        .mode-btn.active { background:#fff; color:var(--sch-blue); box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+
+        .table-wrap { padding:10px 5px 200px 5px; max-width:800px; margin:0 auto; }
+        table { width:100%; border-collapse:separate; border-spacing:0; background:var(--bg-card); border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+        th { background:var(--bg-th); color:var(--text-th); padding:10px 2px; font-size:0.8rem; font-weight:700; text-align:center; border-bottom:1px solid var(--border-color); }
+        td { text-align:center; vertical-align:middle; height:65px; border-bottom:1px solid var(--border-color); border-right:1px solid var(--border-color); padding:0; }
+        td:last-child { border-right:none; } tr:last-child td { border-bottom:none; }
+
+        .td-name { width:26%; padding:0 4px; font-weight:700; cursor:pointer; }
+        .drug-cell-container { display:flex; align-items:center; }
+        .copy-btn-area { padding-right:4px; display:flex; align-items:center; }
+        .copy-icon { font-size:0.9rem; color:var(--sch-blue); font-weight:900; cursor:pointer; padding:4px; }
+        .name-area { flex:1; text-align:center; }
+        .drug-title-row { display:flex; align-items:center; justify-content:center; gap:3px; }
+        .drug-title { font-size:0.95rem; line-height:1.1; margin-bottom:2px; word-break:break-all; }
+        .drug-mix-info { font-size:0.65rem; font-weight:500; opacity:0.8; display:block; color:inherit; line-height:1.2; }
+        .info-icon { font-size:0.8rem; opacity:0.6; border:1px solid currentColor; border-radius:50%; width:14px; height:14px; display:inline-flex; align-items:center; justify-content:center; }
+
+        .td-white { width:12%; background:var(--bg-card); color:var(--text-main); }
+        .input-mini { width:100%; border:none; text-align:center; font-size:1.3rem; font-weight:700; color:var(--text-main); background:transparent; padding:0; }
+        .td-input { width:18%; background:var(--bg-input-yellow); }
+        .input-dose { width:100%; height:100%; border:none; background:transparent; text-align:center; font-size:1.6rem; font-weight:900; color:var(--text-input); }
+        .td-unit { width:13%; background:var(--bg-input-yellow); font-size:0.8rem; font-weight:800; padding:0 1px; white-space:normal; line-height:1.1; }
+        .td-result { width:19%; font-weight:900; }
+        .res-val { font-size:1.5rem; display:block; line-height:1; }
+        .res-unit { font-size:0.75rem; font-weight:500; margin-top:3px; opacity:0.8; }
+
+        .txt-standard { color: var(--u-std) !important; }
+        .txt-vaso { color: var(--u-vaso) !important; }
+        .txt-mcgmin { color: var(--u-mcgmin) !important; }
+        .txt-mghr { color: var(--u-mghr) !important; }
+        .txt-mcghr { color: var(--u-mcghr) !important; }
+
+        .theme-red .td-name, .theme-red .td-result { background:var(--bg-red); color:var(--text-red); }
+        .theme-blue .td-name, .theme-blue .td-result { background:var(--bg-blue); color:var(--text-blue); }
+        .theme-green .td-name, .theme-green .td-result { background:var(--bg-green); color:var(--text-green); }
+
+        .footer-bar { position:fixed; bottom:0; left:0; width:100%; background:var(--bg-card); border-top:1px solid var(--border-color); padding:10px; display:flex; flex-direction:column; align-items:center; box-shadow:0 -2px 10px rgba(0,0,0,0.1); z-index:2000; }
+        .btn-copy { width:95%; max-width:600px; padding:12px; background:#2196f3; color:white; border:none; border-radius:8px; font-size:1.1rem; font-weight:800; cursor:pointer; box-shadow:0 4px 6px rgba(0,0,0,0.2); }
+        .footer-disclaimer { width:95%; max-width:600px; font-size:0.65rem; color:var(--text-main); opacity:0.7; margin-top:6px; margin-bottom:2px; text-align:center; line-height:1.2; word-break:keep-all; }
+        .copyright-text { font-size: 0.65rem; color: #999; margin-top: 0; text-align: center; line-height: 1.2; font-weight: 500; }
+
+        .popup-panel { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:85%; max-width:350px; background:var(--bg-card); color:var(--text-main); z-index:3000; padding:20px; border-radius:12px; box-shadow:0 5px 25px rgba(0,0,0,0.5); max-height:80vh; overflow-y:auto; border:1px solid var(--border-color); }
+        .overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:2500; }
+        .check-item { display:flex; align-items:center; margin:10px 0; font-size:1rem; font-weight:500; }
+        .bulk-btn-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .btn-bulk { flex: 1; padding: 10px; background: #e0e0e0; border: 1px solid #ccc; border-radius: 6px; font-weight: 700; cursor: pointer; color: #333; font-size: 0.9rem; }
+        .btn-bulk:active { background: #d5d5d5; }
+        
+        .btn-confirm-final { width:100%; padding:15px; border:none; border-radius:8px; font-size:1.2rem; font-weight:900; cursor:pointer; margin-top:20px; margin-bottom:10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .btn-reset-final { width:100%; padding:10px; background:#e53935; color:white; border:none; border-radius:8px; font-size:0.9rem; font-weight:700; cursor:pointer; margin-top:10px; opacity:0.9; }
+        .btn-popup-close { width:100%; padding:10px; background:#555; color:white; border:none; border-radius:8px; margin-top:15px; font-size:1rem; font-weight:700; cursor:pointer; }
+        
+        .free-section { background:var(--bg-blue); padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid #bbdefb; }
+        .free-section-title { display:block; font-size:0.8rem; font-weight:700; color:var(--sch-blue); margin-bottom:5px; text-align:left; }
+        .free-row, .vent-row { display:flex; align-items:center; gap:5px; margin-bottom:5px; }
+        .vent-row { justify-content: space-between; margin-bottom: 15px; }
+        .free-input { flex:1; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:1.1rem; text-align:center; font-weight:700; background:#fff; color:#333; }
+        .free-select { flex:0.8; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:0.9rem; background:#fff; color:#333; }
+        .free-result-box { background:#e8f5e9; padding:15px; border-radius:8px; text-align:center; margin-top:10px; border:2px solid #4caf50; }
+        .free-res-val { font-size:2.2rem; font-weight:900; color:#2e7d32; display:block; line-height:1.2; }
+        .free-res-unit { font-size:1rem; font-weight:700; color:#1b5e20; }
+        
+        .vent-label { font-weight:700; color:var(--sch-blue); }
+        .gender-btn { flex:1; padding:12px; border:1px solid #ccc; background:#f0f0f0; color:#666; cursor:pointer; font-weight:700; border-radius:6px; transition:0.2s; }
+        .gender-btn.active { background:#0055b8; color:#fff; border-color:#004ba0; box-shadow:0 2px 4px rgba(0,0,0,0.3); }
+        .vent-section-header { font-size:0.9rem; font-weight:900; color:#455a64; margin-top:15px; margin-bottom:5px; text-align:left; border-left:4px solid #009688; padding-left:8px; }
+        .vt-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:5px; }
+        .vt-item { background:#fff; padding:10px 5px; border-radius:6px; text-align:center; border:1px solid #b2dfdb; }
+        .vt-label { display:block; font-size:0.75rem; color:#00796b; margin-bottom:2px; }
+        .vt-val { font-size:1.2rem; font-weight:900; color:#004d40; }
+        .pbw-display { text-align:center; font-size:2rem; font-weight:900; color:#d32f2f; margin:10px 0; background:#ffebee; padding:10px; border-radius:8px; }
+        .btn-vent-print { width:100%; padding:12px; background:#607d8b; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:800; cursor:pointer; margin-top:15px; box-shadow:0 4px 6px rgba(0,0,0,0.2); }
+
+        .hep-protocol-box { border: 2px solid #ffcc80; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+        .hep-protocol-title { background: #ffe0b2; color: #e65100; padding: 10px; font-weight: 900; text-align: center; border-bottom: 1px solid #ffcc80; }
+        .hep-calc-row { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #fff; border-bottom: 1px solid #eee; }
+        .hep-calc-row:last-child { border-bottom: none; }
+        .hep-calc-label { font-size: 0.9rem; font-weight: 700; color: #555; }
+        .hep-calc-input { width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-weight: 700; font-size: 1rem; color: #e65100; }
+        .hep-calc-result { width: 80px; padding: 5px; background: #e3f2fd; border-radius: 4px; text-align: center; font-weight: 900; font-size: 1rem; color: #1565c0; }
+        .hep-section-header { background:#fff3e0; color:#e65100; padding:8px; font-weight:900; border-left:5px solid #ff9800; margin-top:20px; margin-bottom:10px; font-size:0.95rem; text-align:left; }
+        .hep-input-row { display:flex; align-items:center; gap:5px; margin-bottom:10px; }
+        .hep-input { width:80px; padding:10px; border:2px solid #ff9800; border-radius:6px; text-align:center; font-size:1.2rem; font-weight:700; color:#e65100; }
+        .hep-select { flex:1; padding:10px; border:1px solid #ccc; border-radius:6px; font-size:1rem; background:white; color:#333; }
+        .hep-action-box { background:#fbe9e7; padding:15px; border-radius:8px; text-align:center; margin-top:15px; border:2px solid #ff5722; }
+        .hep-action-text { font-size:1.1rem; font-weight:900; color:#bf360c; display:block; margin-bottom:5px; }
+        .hep-new-rate { font-size:2rem; font-weight:900; color:#d84315; }
+
+        .info-title { font-size:1.3rem; font-weight:900; margin-bottom:10px; color:var(--sch-blue); border-bottom:2px solid #ddd; padding-bottom:5px; }
+        .info-content { font-size:1rem; line-height:1.6; white-space:pre-line; text-align:left; }
+        .empty-msg { text-align:center; padding:40px; color:#999; display:none; }
+
+        @media print {
+            body { background: white; color: black; -webkit-print-color-adjust: exact; }
+            .header, .footer-bar, .overlay, .table-wrap { display: none !important; }
+            .popup-panel[style*="display: block"] { display: block !important; position: static !important; width: 100% !important; max-width: 100% !important; box-shadow: none !important; border: none !important; transform: none !important; left: 0 !important; top: 0 !important; padding: 0 !important; }
+            .btn-popup-close, .btn-vent-print { display: none !important; }
+            .vent-result-box, .pbw-display, .vt-item, .hep-protocol-box, .hep-action-box { border: 1px solid #000 !important; color: #000 !important; background: white !important; }
+            .gender-btn { border: 1px solid #000 !important; color: #000 !important; background: white !important; }
+            .gender-btn.active { background: #ddd !important; font-weight: 900 !important; border: 2px solid #000 !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <button class="btn-darkmode" onclick="toggleDarkMode()">🌙</button>
+    <h1 class="hospital-title">순천향대학교 천안병원</h1>
+    <h3 class="dept-title">중환자실 약물계산기</h3>
+    
+    <div class="dept-switch-row">
+        <button class="dept-btn" id="btn-sicu" onclick="setDept('SICU')">SICU</button>
+        <button class="dept-btn" id="btn-ccu" onclick="setDept('CCU')">CCU</button>
+        <button class="dept-btn" id="btn-micu" onclick="setDept('MICU')">MICU/EICU</button>
+    </div>
+
+    <div class="control-top-row">
+        <div class="weight-container">
+            <span class="weight-label">체중(kg)</span>
+            <input type="number" id="bw" class="weight-input" value="60" oninput="saveWeight(); calcAll(); calcFree(); calcPBW(); calcHeparin();" step="0.1">
+        </div>
+        <div class="btn-group">
+            <button class="btn-common btn-free-calc" onclick="openFreeCalc()">🧮 자유 계산기</button>
+            <button class="btn-common btn-vent" onclick="openVentCalc()">🌬️ Ventilator</button>
+            <button class="btn-common btn-heparin" onclick="openHeparinCalc()">🩸 Heparin</button>
+            <button class="btn-common btn-setting" onclick="openSettings()">⚙️ 약물선택</button>
+        </div>
+    </div>
+    <div class="mode-row">
+        <button class="mode-btn active" id="btnMode0" onclick="setMode(0)">약물용량 ➜ cc/hr</button>
+        <button class="mode-btn" id="btnMode1" onclick="setMode(1)">cc/hr ➜ 약물용량</button>
+    </div>
+</div>
+
+<div class="table-wrap">
+    <table id="mainTable">
+        <thead>
+            <tr>
+                <th style="width:26%">약물명</th>
+                <th style="width:12%">약물<br>용량</th>
+                <th style="width:12%">mix<br>수액</th>
+                <th id="th-input" style="width:18%">처방</th>
+                <th style="width:13%">단위</th>
+                <th id="th-output" style="width:19%">속도</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+    <div id="empty-msg" class="empty-msg">선택된 약물이 없습니다.</div>
+</div>
+
+<div class="footer-bar">
+    <button class="btn-copy" onclick="copyEMR()">📋 EMR 기록 복사 (Copy Text)</button>
+    <div class="footer-disclaimer">
+        본 프로그램은 계산 편의를 돕는 보조 도구이며, 최종 투약 용량과 속도의 확인 책임은 사용자(의료인)에게 있습니다.<br>
+        반드시 EMR 처방과 이중 확인(Double Check) 하십시오. 개발자는 사용 결과에 대해 법적 책임을 지지 않습니다.
+    </div>
+    <div class="copyright-text">
+        Version 1.0 | Copyright © 2026 SCH Cheonan Hospital CCU. All rights reserved.
+    </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeAllPopups()"></div>
+
+<div id="free-calc-panel" class="popup-panel">
+    <h3 style="text-align:center; margin-top:0; color:var(--sch-blue); margin-bottom:15px;">🧮 자유 계산기</h3>
+    <div class="free-section">
+        <span class="free-section-title">1. 약물 믹스 정보 (Mix)</span>
+        <div class="free-row">
+            <input type="number" id="free-amt" class="free-input" placeholder="약물량" oninput="calcFree()" step="0.01">
+            <select id="free-amt-unit" class="free-select" onchange="calcFree()">
+                <option value="mg">mg</option>
+                <option value="mcg">mcg</option>
+                <option value="IU">IU</option>
+                <option value="g">g</option>
+            </select>
+        </div>
+        <div class="free-row">
+            <input type="number" id="free-vol" class="free-input" placeholder="수액량" oninput="calcFree()" step="0.01">
+            <span style="font-weight:700; padding:0 10px; color:#555;">cc (ml)</span>
+        </div>
+    </div>
+    <div class="free-section" style="background:var(--bg-input-yellow); border-color:#ffe082;">
+        <span class="free-section-title" style="color:#f57f17;">2. 처방 정보 (Order)</span>
+        <div class="free-row">
+            <input type="number" id="free-dose" class="free-input" placeholder="처방 용량" oninput="calcFree()" step="0.01">
+        </div>
+        <div class="free-row">
+            <select id="free-dose-unit" class="free-select" onchange="calcFree()" style="flex:1;">
+                <option value="mcg/kg/min">mcg/kg/min</option>
+                <option value="mcg/kg/hr">mcg/kg/hr</option>
+                <option value="mg/hr">mg/hr</option>
+                <option value="mcg/min">mcg/min</option>
+                <option value="unit/min">Unit/min</option>
+                <option value="unit/hr">Unit/hr</option>
+            </select>
+        </div>
+    </div>
+    <div class="free-result-box">
+        <span style="font-size:0.9rem; font-weight:700; color:#1b5e20;">주입 속도 (Rate)</span>
+        <span id="free-result" class="free-res-val">0.00</span>
+        <span class="free-res-unit">cc/hr</span>
+    </div>
+    <button class="btn-popup-close" onclick="closeAllPopups()">닫기</button>
+</div>
+
+<div id="vent-panel" class="popup-panel">
+    <h3 style="text-align:center; margin-top:0; color:#00796b; margin-bottom:15px;">🌬️ Ventilator Settings</h3>
+    <div class="vent-row">
+        <span class="vent-label">성별 (Gender)</span>
+        <div style="display:flex; gap:10px; flex:1;">
+            <button class="gender-btn active" id="btn-male" onclick="setGender('male')">남성 (Male)</button>
+            <button class="gender-btn" id="btn-female" onclick="setGender('female')">여성 (Female)</button>
+        </div>
+    </div>
+    <div class="vent-row">
+        <span class="vent-label">신장 (Height)</span>
+        <input type="number" id="vent-height" class="free-input" placeholder="cm" oninput="calcPBW()">
+    </div>
+    <hr style="border:1px dashed #b2dfdb; margin:15px 0;">
+    <div style="text-align:center;">
+        <span style="font-size:0.9rem; color:#555;">예측 체중 (PBW)</span>
+        <div class="pbw-display"><span id="pbw-val">0.0</span> kg</div>
+    </div>
+    <div class="vent-section-header">Without ARDS (6 ~ 8 ml/kg)</div>
+    <div class="vt-grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="vt-item"><span class="vt-label">Target 6ml</span><span id="vt-6" class="vt-val">0</span></div>
+        <div class="vt-item"><span class="vt-label">Target 8ml</span><span id="vt-8" class="vt-val">0</span></div>
+    </div>
+    <div class="vent-section-header" style="border-color:#e53935; color:#c62828;">With ARDS (4 ~ 6 ml/kg)</div>
+    <div class="vt-grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="vt-item" style="border-color:#ef9a9a;"><span class="vt-label" style="color:#c62828;">Target 4ml</span><span id="vt-4" class="vt-val" style="color:#b71c1c;">0</span></div>
+        <div class="vt-item" style="border-color:#ef9a9a;"><span class="vt-label" style="color:#c62828;">Target 6ml</span><span id="vt-6-ards" class="vt-val" style="color:#b71c1c;">0</span></div>
+    </div>
+    <button class="btn-vent-print" onclick="window.print()">🖨️ 결과 출력 (Print)</button>
+    <button class="btn-popup-close" onclick="closeAllPopups()">닫기</button>
+</div>
+
+<div id="hep-panel" class="popup-panel">
+    <h3 style="text-align:center; margin-top:0; color:#e65100; margin-bottom:5px;">🩸 Heparin Protocol</h3>
+    <div style="text-align:center; font-size:0.85rem; color:#666; margin-bottom:15px;">
+        Standard Mix: <strong>25,000 U / 250 cc</strong> (100 U/cc)
+    </div>
+
+    <div class="hep-protocol-box">
+        <div class="hep-protocol-title">Heparinization for ACS / MI<br><span style="font-size:0.8em; font-weight:500;">(Bolus 60U/kg, Rate 12U/kg/hr)</span></div>
+        <div style="padding:10px; background:#fff; text-align:center;">
+            <span style="font-size:0.9rem; color:#e65100; display:block;">Initial Bolus (60U/kg)</span>
+            <span id="hep-acs-bolus" style="font-size:1.5rem; font-weight:900; color:#bf360c;">0</span> Unit
+        </div>
+        <div class="hep-calc-row">
+            <span class="hep-calc-label">U/kg/hr</span>
+            <input type="number" id="hep-acs-u-input" class="hep-calc-input" placeholder="12" oninput="calcHeparin()" step="0.01">
+            <span style="font-weight:900;">➜</span>
+            <div class="hep-calc-result"><span id="hep-acs-cc-result">0.0</span> <span style="font-size:0.7em;">cc/hr</span></div>
+        </div>
+        <div class="hep-calc-row">
+            <span class="hep-calc-label">cc/hr</span>
+            <input type="number" id="hep-acs-cc-input" class="hep-calc-input" placeholder="0" oninput="calcHeparin()" step="0.01">
+            <span style="font-weight:900;">➜</span>
+            <div class="hep-calc-result"><span id="hep-acs-u-result">0.0</span> <span style="font-size:0.7em;">U/kg</span></div>
+        </div>
+    </div>
+
+    <div class="hep-protocol-box" style="border-color:#ffab91;">
+        <div class="hep-protocol-title" style="background:#ffccbc; color:#d84315;">Heparinization for PTE / DVT<br><span style="font-size:0.8em; font-weight:500;">(Bolus 80U/kg, Rate 18U/kg/hr)</span></div>
+        <div style="padding:10px; background:#fff; text-align:center;">
+            <span style="font-size:0.9rem; color:#d84315; display:block;">Initial Bolus (80U/kg)</span>
+            <span id="hep-pte-bolus" style="font-size:1.5rem; font-weight:900; color:#bf360c;">0</span> Unit
+        </div>
+        <div class="hep-calc-row">
+            <span class="hep-calc-label">U/kg/hr</span>
+            <input type="number" id="hep-pte-u-input" class="hep-calc-input" placeholder="18" oninput="calcHeparin()" step="0.01">
+            <span style="font-weight:900;">➜</span>
+            <div class="hep-calc-result"><span id="hep-pte-cc-result">0.0</span> <span style="font-size:0.7em;">cc/hr</span></div>
+        </div>
+        <div class="hep-calc-row">
+            <span class="hep-calc-label">cc/hr</span>
+            <input type="number" id="hep-pte-cc-input" class="hep-calc-input" placeholder="0" oninput="calcHeparin()" step="0.01">
+            <span style="font-weight:900;">➜</span>
+            <div class="hep-calc-result"><span id="hep-pte-u-result">0.0</span> <span style="font-size:0.7em;">U/kg</span></div>
+        </div>
+    </div>
+
+    <div class="hep-section-header" style="margin-top:20px; border-left-color:#d32f2f; background:#ffebee; color:#b71c1c;">aPTT Adjustment (Nomogram)</div>
+    <div class="hep-input-row">
+        <span style="font-weight:700; color:#bf360c;">현재 속도:</span>
+        <input type="number" id="hep-curr-rate" class="hep-input" placeholder="0" oninput="calcHeparinAdjustment()" step="0.01">
+        <span style="font-weight:700;">cc/hr</span>
+    </div>
+    <div class="hep-input-row">
+        <span style="font-weight:700; color:#bf360c;">aPTT 결과:</span>
+        <select id="hep-aptt" class="hep-select" onchange="calcHeparinAdjustment()">
+            <option value="none">선택하세요</option>
+            <option value="<35">&lt; 35 (sec)</option>
+            <option value="35-45">35 - 45 (sec)</option>
+            <option value="46-70">46 - 70 (sec) [Target]</option>
+            <option value="71-90">71 - 90 (sec)</option>
+            <option value=">90">&gt; 90 (sec)</option>
+        </select>
+    </div>
+    <div class="hep-action-box">
+        <div style="margin-bottom:8px;">
+            <span style="color:#bf360c; font-size:0.9rem;">추가 Bolus 용량</span><br>
+            <span id="hep-adj-bolus" style="font-size:1.4rem; font-weight:900;">0</span> Unit
+        </div>
+        <span class="hep-action-text" id="hep-action-msg">조절 후 속도 (New Rate)</span>
+        <span id="hep-adj-rate" class="hep-new-rate">0.0</span>
+        <span style="font-weight:700; color:#d84315;">cc/hr</span>
+    </div>
+    <button class="btn-popup-close" onclick="closeAllPopups()">닫기</button>
+</div>
+
+<div id="selection-panel" class="popup-panel">
+    <h3 style="text-align:center; margin-top:0;">약물 목록 선택</h3>
+    <div class="bulk-btn-row">
+        <button class="btn-bulk" onclick="toggleCheckboxes(true)">전체 선택</button>
+        <button class="btn-bulk" onclick="toggleCheckboxes(false)">전체 해제</button>
+    </div>
+    <div id="checklist-container"></div>
+    <button class="btn-confirm-final" onclick="closeAllPopups()" style="background-color: #0055b8 !important; color: #ffffff !important;">✅ 선택 완료 (확인)</button>
+    <button class="btn-reset-final" onclick="resetAllData()">⚠️ 데이터 초기화 (모든 설정 리셋)</button>
+</div>
+
+<div id="info-panel" class="popup-panel">
+    <div id="info-title" class="info-title">약물 정보</div>
+    <div id="info-content" class="info-content"></div>
+    <button class="btn-popup-close" onclick="closeAllPopups()">닫기</button>
+</div>
+
+<script>
+    let currentMode = 0; 
+    let currentDept = localStorage.getItem('sch_icu_dept') || 'CCU'; 
+
+    const drugs = [
+        { id: 'norepi', name: 'Norepinephrine', sub: '(4mg/4ml/1amp)<br>(20mg/20ml/1amp)', amt: 20, vol: 200, unit: 'mcg/kg/min', type: 1, color: 'red', uTxt: 'txt-standard', info: "* Maintenance: 0.01~0.3 mcg/kg/min (Max 0.5)\n* Standard mix: 20mg + D5W 200ml" },
+        { id: 'epi', name: 'Epinephrine', sub: '(1mg/1amp)', amt: 4, vol: 200, unit: 'mcg/kg/min', type: 1, color: 'red', uTxt: 'txt-standard', info: "* Maintenance: 0.01~0.03 mcg/kg/min (증량 가능)\n* Standard mix: 4mg + D5W 200ml" },
+        { id: 'vaso', name: 'Vasopressin', sub: '(20IU/1amp)', amt: 20, vol: 100, unit: 'Unit/min', type: 2, color: 'red', uTxt: 'txt-vaso', info: "* Maintenance: 0.01~0.04 unit/min (Max 0.1)\n* Standard mix: 20IU + D5W 100ml" },
+        { id: 'dobu', name: 'Dobutamine', sub: '(250mg/1amp)', amt: 500, vol: 250, unit: 'mcg/kg/min', type: 1, color: 'red', uTxt: 'txt-standard', info: "* Maintenance: 1~6 mcg/kg/min (Max 20)\n* Standard mix: 500mg + D5W 250ml" },
+        { id: 'dopa', name: 'Dopamine', sub: '(200mg/1amp)', amt: 400, vol: 250, unit: 'mcg/kg/min', type: 1, color: 'red', uTxt: 'txt-standard', info: "* Maintenance: 2~30 mcg/kg/min\n* Standard mix: 400mg + D5W 200ml" },
+        
+        { id: 'ntg', name: 'Nitroglycerin', sub: '(50mg/50cc/1vial)', amt: 50, vol: 50, unit: 'mcg/kg/min', type: 1, color: 'green', uTxt: 'txt-standard', info: "* Start dose: 5 mcg/min\n* Inc by 5 mcg/min every 3~5min (Max 20)\n* Standard mix: 100mg + D5W 200ml" },
+        { id: 'mc_ntg', name: 'MC Nitroglycerin', sub: '(100mg/500cc)', amt: 100, vol: 500, unit: 'mcg/min', type: 5, color: 'green', uTxt: 'txt-mcgmin', info: "* Start dose: 5 mcg/min\n* Inc by 5 mcg/min every 3~5min (Max 20)\n* Standard mix: 100mg + D5W 200ml" },
+        { id: 'esmolol', name: 'Esmolol', sub: '(100mg/10ml/1vial)', amt: 2000, vol: 500, unit: 'mcg/kg/min', type: 1, color: 'green', uTxt: 'txt-standard', info: "* Range: 50 ~ 200 mcg/kg/min\n* Standard mix: 2000mg + NS 500ml" },
+        { id: 'nicar', name: 'Nicardipine', sub: '(10mg/10ml/1amp)', amt: 100, vol: 200, unit: 'mcg/kg/min', type: 1, color: 'green', uTxt: 'txt-standard', info: "* Range: 0.5 ~ 6 mcg/kg/min\n* Standard mix: 100mg + NS 200ml" },
+        { id: 'diltia', name: 'Diltiazem', sub: '(50mg/1vial)', amt: 100, vol: 100, unit: 'mg/hr', type: 6, color: 'green', uTxt: 'txt-mghr', info: "* Range: 5 ~ 15 mg/hr\n* Standard mix: 100mg + NS 100ml" },
+        { id: 'iso', name: 'Isoproterenol', sub: '(0.2mg/1ml/1amp)', amt: 1, vol: 100, unit: 'mcg/min', type: 5, color: 'green', uTxt: 'txt-mcgmin', info: "* Maintenance: 0.5~5 mcg/min (Max 20)\n* Standard mix: 1mg + NS/5DW 100ml" },
+        { id: 'milri', name: 'Milrinone', sub: '(10mg/10ml/1amp)', amt: 20, vol: 100, unit: 'mcg/kg/min', type: 1, color: 'green', uTxt: 'txt-standard', info: "* Loading: 50mcg/kg (10min)\n* Maintenance: 0.375~0.75 mcg/kg/min" },
+
+        { id: 'remi', name: 'Remifentanil', sub: '(5mg/1vial)', amt: 10, vol: 100, unit: 'mcg/kg/min', type: 1, color: 'blue', uTxt: 'txt-standard', info: "* Maintenance: 0.025~0.2 mcg/kg/min\n* Standard mix: 10mg + D5W 100ml" },
+        { id: 'propo', name: 'Propofol', sub: '(1000mg/50cc/1bt)', amt: 1000, vol: 50, unit: 'mg/kg/hr', type: 3, color: 'blue', uTxt: 'txt-mghr', info: "* Loading: 0.5~1 mg/kg\n* Maintenance: 0.1~2 mg/kg/hr (Max 4)\n* Standard mix: Premix" },
+        { id: 'precedex', name: 'Dexmedetomidine', sub: '(1000mcg/250ml/1bt)', amt: 1000, vol: 250, unit: 'mcg/kg/hr', type: 7, color: 'blue', uTxt: 'txt-mcghr', info: "* Maintenance: 0.1~0.6 mcg/kg/hr (Max 0.7)\n* Standard mix: 200mcg + NS 50ml (NS premix)" },
+        { id: 'vecu', name: 'Vecuronium', sub: '(10mg/1vial)', amt: 50, vol: 50, unit: 'mcg/kg/min', type: 1, color: 'blue', uTxt: 'txt-standard', info: "* Loading: 0.05~0.1 mg/kg\n* Maintenance: 0.8~1.2 mcg/kg/min\n* Standard mix: 50mg + D5W 50ml" },
+        { id: 'rocu', name: 'Rocuronium', sub: '(50mg/5ml/1vial)', amt: 1000, vol: 250, unit: 'mg/kg/hr', type: 3, color: 'blue', uTxt: 'txt-mghr', info: "* Range: 0.2 ~ 0.7 mg/kg/hr\n* Standard mix: 1000mg + NS 250ml" },
+        { id: 'mida', name: 'Midazolam', sub: '(15mg/3cc, 5mg/5cc, 3mg/3cc)', amt: 100, vol: 100, unit: 'mg/kg/hr', type: 3, color: 'blue', uTxt: 'txt-mghr', info: "* Maintenance: 0.01~0.1 mg/kg/hr (Max 0.2)\n* IV bolus: 0.02~0.08 mg/kg\n* Standard mix: 100mg + D5W 100ml" },
+        { id: 'keta', name: 'Ketamine', sub: '(500mg/10ml/1vial)', amt: 500, vol: 200, unit: 'mcg/kg/min', type: 1, color: 'blue', uTxt: 'txt-standard', info: "* Loading: 0.5~1 mg/kg (1분 이상)\n* Maintenance: 1~10 mcg/kg/min (Max 20)\n* Standard mix: 500mg + D5W 200ml" },
+        { id: 'morphine', name: 'Morphine', sub: '(10mg/1ml/1amp)<br>(15mg/1ml/1amp)', amt: 100, vol: 100, unit: 'mg/hr', type: 6, color: 'blue', uTxt: 'txt-mghr', info: "* Maintenance: 0.5~5 mg/hr (Max 35)\n* Standard mix: 100mg + D5W 100ml" },
+        { id: 'hydro', name: 'Hydromorphone', sub: '(2mg/1ml/1amp)', amt: 20, vol: 100, unit: 'mg/hr', type: 6, color: 'blue', uTxt: 'txt-mghr', info: "* Maintenance: 0.25~4 mg/hr\n* Standard mix: 20mg + NS 100ml" },
+        { id: 'sufen', name: 'Sufentanil citrate', sub: '(250mcg/5ml/1amp)<br>(50mcg/1ml/1amp)', amt: 250, vol: 50, unit: 'mcg/kg/hr', type: 7, color: 'blue', uTxt: 'txt-mcghr', info: "* Standard mix: 250mcg + NS 50ml\n* Dose unit: mcg/kg/hr" },
+        { id: 'fenta', name: 'Fentanil', sub: '(1000mcg/20ml/1amp)', amt: 2000, vol: 50, unit: 'mcg/kg/hr', type: 7, color: 'blue', uTxt: 'txt-mcghr', info: "* Standard mix: 2000mcg + D5W 50ml\n* Dose unit: mcg/kg/hr" }
+    ];
+
+    const ccuMix = {
+        'norepi': { amt: 4, vol: 50 },
+        'epi': { amt: 4, vol: 50 },
+        'dobu': { amt: 250, vol: 50 },
+        'dopa': { amt: 200, vol: 50 }
+    };
+    const ccuExclude = ['esmolol', 'nicar', 'diltia', 'iso', 'milri', 'rocu', 'hydro', 'fenta'];
+    const sicuExclude = ['esmolol', 'rocu', 'hydro', 'fenta', 'diltia', 'iso'];
+
+    let savedInputs = JSON.parse(localStorage.getItem('sch_icu_inputs')) || {};
+    let savedMix = JSON.parse(localStorage.getItem('sch_icu_mix')) || {};
+    let activeDrugs = JSON.parse(localStorage.getItem('sch_icu_v73_active'));
+    if (!activeDrugs) activeDrugs = drugs.map(d => d.id);
+
+    drugs.forEach(d => { if(!savedInputs[d.id]) savedInputs[d.id] = {0: '', 1: ''}; });
+
+    const tableBody = document.getElementById('tableBody');
+    const checklistContainer = document.getElementById('checklist-container');
+    const thInput = document.getElementById('th-input');
+    const thOutput = document.getElementById('th-output');
+    const btnMode0 = document.getElementById('btnMode0');
+    const btnMode1 = document.getElementById('btnMode1');
+
+    function init() {
+        setDept(currentDept, false); 
+        const savedBw = localStorage.getItem('sch_icu_weight');
+        if(savedBw) document.getElementById('bw').value = savedBw;
+        renderChecklist();
+        renderTable();
+        if(localStorage.getItem('sch_icu_darkmode') === 'true') {
+            document.body.classList.add('dark-mode');
+            document.querySelector('.btn-darkmode').innerText = '☀️';
+        }
+    }
+
+    function saveWeight() { localStorage.setItem('sch_icu_weight', document.getElementById('bw').value); }
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        document.querySelector('.btn-darkmode').innerText = isDark ? '☀️' : '🌙';
+        localStorage.setItem('sch_icu_darkmode', isDark);
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        if (mode === 0) {
+            btnMode0.className = 'mode-btn active'; btnMode1.className = 'mode-btn';
+            thInput.innerText = "처방"; thOutput.innerText = "속도";
+        } else {
+            btnMode0.className = 'mode-btn'; btnMode1.className = 'mode-btn active';
+            thInput.innerText = "속도"; thOutput.innerText = "처방";
+        }
+        renderTable();
+    }
+
+    function setDept(dept, forceReset = true) {
+        currentDept = dept;
+        localStorage.setItem('sch_icu_dept', dept);
+        document.querySelectorAll('.dept-btn').forEach(btn => btn.className = 'dept-btn');
+        
+        let targetId = '';
+        if(dept === 'SICU') targetId = 'btn-sicu';
+        if(dept === 'CCU') targetId = 'btn-ccu';
+        if(dept === 'MICU') targetId = 'btn-micu';
+        
+        if(targetId) document.getElementById(targetId).className = 'dept-btn active';
+
+        if (forceReset) {
+            // Reset special mix for CCU/SICU drugs
+            ['norepi', 'epi', 'dobu', 'dopa'].forEach(id => { if (savedMix[id]) delete savedMix[id]; });
+            localStorage.setItem('sch_icu_mix', JSON.stringify(savedMix));
+            renderTable();
+        }
+    }
+
+    function renderTable() {
+        tableBody.innerHTML = '';
+        let count = 0;
+        drugs.forEach(d => {
+            // Exclusion Logic
+            if (currentDept === 'CCU' && ccuExclude.includes(d.id)) return;
+            if (currentDept === 'SICU' && sicuExclude.includes(d.id)) return;
+            
+            if (!activeDrugs.includes(d.id)) return;
+            count++;
+            const row = document.createElement('tr');
+            row.className = `theme-${d.color}`;
+            
+            let val = savedInputs[d.id][currentMode];
+            let currentAmt = d.amt;
+            let currentVol = d.vol;
+
+            // Apply Mix Rule
+            if (currentDept === 'CCU' && ccuMix[d.id]) {
+                currentAmt = ccuMix[d.id].amt;
+                currentVol = ccuMix[d.id].vol;
+            }
+            // User Override
+            if (savedMix[d.id]) {
+                currentAmt = savedMix[d.id].amt;
+                currentVol = savedMix[d.id].vol;
+            }
+
+            let doseUnit = d.unit.replace('Unit','U'); 
+            let inputUnit = currentMode === 0 ? doseUnit : "cc/hr";
+            let outputUnit = currentMode === 0 ? "cc/hr" : doseUnit;
+            let amtUnit = 'mg'; if(d.id === 'vaso') amtUnit = 'IU'; if(d.id === 'precedex' || d.id === 'sufen' || d.id === 'fenta' || d.id === 'iso') amtUnit = 'mcg';
+
+            row.innerHTML = `
+                <td class="td-name" onclick="showInfo('${d.id}')">
+                    <div class="drug-cell-container">
+                        <div class="copy-btn-area"><span class="copy-icon" onclick="copyMixInfo('${d.id}', '${amtUnit}', event)">※</span></div>
+                        <div class="name-area">
+                            <div class="drug-title-row"><span class="drug-title">${d.name}</span><span class="info-icon">ⓘ</span></div>
+                            <span class="drug-mix-info">${d.sub}</span>
+                        </div>
+                    </div>
+                </td>
+                <td class="td-white"><input type="number" step="0.01" class="input-mini" id="amt_${d.id}" value="${currentAmt}" oninput="updateMix('${d.id}')"></td>
+                <td class="td-white"><input type="number" step="0.01" class="input-mini" id="vol_${d.id}" value="${currentVol}" oninput="updateMix('${d.id}')"></td>
+                <td class="td-input"><input type="number" step="0.01" class="input-dose" id="input_${d.id}" value="${val}" placeholder="0" oninput="handleInput('${d.id}')"></td>
+                <td class="td-unit ${d.uTxt}">${inputUnit}</td>
+                <td class="td-result"><span id="output_${d.id}" class="res-val">0.00</span><span class="res-unit">${outputUnit}</span></td>
+            `;
+            tableBody.appendChild(row);
+            setTimeout(() => calc(d.id), 0);
+        });
+        document.getElementById('empty-msg').style.display = count === 0 ? 'block' : 'none';
+    }
+
+    function openFreeCalc() {
+        document.getElementById('free-calc-panel').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+    }
+
+    let ventGender = 'male';
+    function openVentCalc() {
+        document.getElementById('vent-panel').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+        calcPBW();
+    }
+    function setGender(gender) {
+        ventGender = gender;
+        document.getElementById('btn-male').className = gender === 'male' ? 'gender-btn active' : 'gender-btn';
+        document.getElementById('btn-female').className = gender === 'female' ? 'gender-btn active' : 'gender-btn';
+        calcPBW();
+    }
+    function calcPBW() {
+        const height = parseFloat(document.getElementById('vent-height').value) || 0;
+        let pbw = 0;
+        if (height > 0) {
+            if (ventGender === 'male') pbw = 50 + 0.91 * (height - 152.4);
+            else pbw = 45.5 + 0.91 * (height - 152.4);
+        }
+        document.getElementById('pbw-val').innerText = pbw.toFixed(1);
+        document.getElementById('vt-6').innerText = Math.round(pbw * 6);
+        document.getElementById('vt-8').innerText = Math.round(pbw * 8);
+        document.getElementById('vt-4').innerText = Math.round(pbw * 4);
+        document.getElementById('vt-6-ards').innerText = Math.round(pbw * 6);
+    }
+
+    function openHeparinCalc() {
+        document.getElementById('hep-panel').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+        calcHeparin();
+        calcHeparinAdjustment();
+    }
+    
+    function calcHeparin() {
+        const weight = parseFloat(document.getElementById('bw').value) || 0;
+        document.getElementById('hep-acs-bolus').innerText = weight * 60;
+        document.getElementById('hep-pte-bolus').innerText = weight * 80;
+
+        const inputU_ACS = parseFloat(document.getElementById('hep-acs-u-input').value);
+        if (!isNaN(inputU_ACS)) document.getElementById('hep-acs-cc-result').innerText = ((inputU_ACS * weight) / 100).toFixed(1);
+        else document.getElementById('hep-acs-cc-result').innerText = "0.0";
+        
+        const inputCC_ACS = parseFloat(document.getElementById('hep-acs-cc-input').value);
+        if (!isNaN(inputCC_ACS)) document.getElementById('hep-acs-u-result').innerText = ((inputCC_ACS * 100) / weight).toFixed(1);
+        else document.getElementById('hep-acs-u-result').innerText = "0.0";
+
+        const inputU_PTE = parseFloat(document.getElementById('hep-pte-u-input').value);
+        if (!isNaN(inputU_PTE)) document.getElementById('hep-pte-cc-result').innerText = ((inputU_PTE * weight) / 100).toFixed(1);
+        else document.getElementById('hep-pte-cc-result').innerText = "0.0";
+
+        const inputCC_PTE = parseFloat(document.getElementById('hep-pte-cc-input').value);
+        if (!isNaN(inputCC_PTE)) document.getElementById('hep-pte-u-result').innerText = ((inputCC_PTE * 100) / weight).toFixed(1);
+        else document.getElementById('hep-pte-u-result').innerText = "0.0";
+    }
+
+    function calcHeparinAdjustment() {
+        const weight = parseFloat(document.getElementById('bw').value) || 0;
+        const currentRate = parseFloat(document.getElementById('hep-curr-rate').value) || 0;
+        const aptt = document.getElementById('hep-aptt').value;
+        let bolus = 0; let changeRateU = 0; let msg = "속도 조절 (Adjust Rate)";
+
+        if (aptt === '<35') { bolus = weight * 80; changeRateU = 4; } 
+        else if (aptt === '35-45') { bolus = weight * 40; changeRateU = 2; } 
+        else if (aptt === '46-70') { bolus = 0; changeRateU = 0; msg = "유지 (No Change)"; } 
+        else if (aptt === '71-90') { bolus = 0; changeRateU = -2; } 
+        else if (aptt === '>90') { bolus = 0; changeRateU = -3; msg = "1hr Stop & Decrease"; } 
+        else {
+            document.getElementById('hep-adj-bolus').innerText = "0";
+            document.getElementById('hep-adj-rate').innerText = "0.0";
+            document.getElementById('hep-action-msg').innerText = "조절 후 속도";
+            return;
+        }
+        const changeCC = (weight * changeRateU) / 100;
+        let newRate = currentRate + changeCC;
+        if(newRate < 0) newRate = 0;
+
+        document.getElementById('hep-adj-bolus').innerText = bolus;
+        document.getElementById('hep-adj-rate').innerText = newRate.toFixed(1);
+        document.getElementById('hep-action-msg').innerText = msg;
+    }
+
+    function calcFree() {
+        const amt = parseFloat(document.getElementById('free-amt').value) || 0;
+        const amtUnit = document.getElementById('free-amt-unit').value;
+        const vol = parseFloat(document.getElementById('free-vol').value) || 0;
+        const dose = parseFloat(document.getElementById('free-dose').value) || 0;
+        const doseUnit = document.getElementById('free-dose-unit').value;
+        const weight = parseFloat(document.getElementById('bw').value) || 0;
+        const resEl = document.getElementById('free-result');
+
+        if(amt === 0 || vol === 0 || dose === 0) { resEl.innerText = "0.00"; return; }
+
+        let mult = 1;
+        if(amtUnit === 'mg') mult = 1000;
+        else if(amtUnit === 'g') mult = 1000000;
+        else if(amtUnit === 'IU') mult = 1; 
+        else if(amtUnit === 'mcg') mult = 1;
+
+        let conc_mcg_cc = (amt * mult) / vol; 
+        let rate = 0;
+        if (doseUnit === 'mcg/kg/min') { if (weight > 0) rate = (dose * weight * 60) / conc_mcg_cc; }
+        else if (doseUnit === 'mcg/kg/hr') { if (weight > 0) rate = (dose * weight) / conc_mcg_cc; }
+        else if (doseUnit === 'mg/hr') { rate = (dose * 1000) / conc_mcg_cc; }
+        else if (doseUnit === 'mcg/min') { rate = (dose * 60) / conc_mcg_cc; }
+        else if (doseUnit === 'unit/min') { rate = (dose * 60) / conc_mcg_cc; }
+        else if (doseUnit === 'unit/hr') { rate = dose / conc_mcg_cc; }
+
+        resEl.innerText = rate.toFixed(2);
+    }
+
+    function updateMix(id) {
+        const newAmt = parseFloat(document.getElementById(`amt_${id}`).value);
+        const newVol = parseFloat(document.getElementById(`vol_${id}`).value);
+        if(!savedMix[id]) savedMix[id] = {};
+        savedMix[id].amt = newAmt; savedMix[id].vol = newVol;
+        localStorage.setItem('sch_icu_mix', JSON.stringify(savedMix));
+        calc(id);
+    }
+
+    function handleInput(id) {
+        const val = document.getElementById(`input_${id}`).value;
+        savedInputs[id][currentMode] = val;
+        localStorage.setItem('sch_icu_inputs', JSON.stringify(savedInputs));
+        calc(id);
+    }
+
+    function calc(id) {
+        const drug = drugs.find(d => d.id === id);
+        const weight = parseFloat(document.getElementById('bw').value) || 0;
+        
+        let currentAmt = parseFloat(document.getElementById(`amt_${id}`).value);
+        let currentVol = parseFloat(document.getElementById(`vol_${id}`).value);
+        if (isNaN(currentAmt)) currentAmt = d.amt;
+        if (isNaN(currentVol)) currentVol = d.vol;
+
+        const inputVal = parseFloat(savedInputs[id][currentMode]) || 0;
+        const outputEl = document.getElementById(`output_${id}`);
+
+        if (currentAmt === 0 || currentVol === 0) { outputEl.innerText = "Err"; return; }
+
+        let conc = 0;
+        if ([1, 4, 5].includes(drug.type)) { conc = (currentAmt * 1000) / currentVol; } 
+        else if (drug.type === 2) { conc = currentAmt / currentVol; } 
+        else if (drug.type === 3 || drug.type === 6) { conc = currentAmt / currentVol; } 
+        else if (drug.type === 7) { conc = currentAmt / currentVol; }
+
+        let result = 0;
+        if (currentMode === 0) { 
+            if (drug.type === 1) { if (weight > 0) result = (inputVal * weight * 60) / conc; }
+            else if (drug.type === 2) { result = (inputVal * 60) / conc; }
+            else if (drug.type === 3) { if (weight > 0) result = (inputVal * weight) / conc; } 
+            else if (drug.type === 4) { if (weight > 0) result = (inputVal * weight) / conc; }
+            else if (drug.type === 5) { result = (inputVal * 60) / conc; }
+            else if (drug.type === 6) { result = inputVal / conc; }
+            else if (drug.type === 7) { if (weight > 0) result = (inputVal * weight) / conc; } 
+        } else { 
+            if (drug.type === 1) { if (weight > 0) result = (inputVal * conc) / (weight * 60); }
+            else if (drug.type === 2) { result = (inputVal * conc) / 60; }
+            else if (drug.type === 3) { if (weight > 0) result = (inputVal * conc) / weight; }
+            else if (drug.type === 4) { if (weight > 0) result = (inputVal * conc) / weight; }
+            else if (drug.type === 5) { result = (inputVal * conc) / 60; }
+            else if (drug.type === 6) { result = inputVal * conc; }
+            else if (drug.type === 7) { if (weight > 0) result = (inputVal * conc) / weight; } 
+        }
+        outputEl.innerText = inputVal === 0 ? "0.00" : result.toFixed(2);
+    }
+
+    function calcAll() { activeDrugs.forEach(id => { if(document.getElementById(`input_${id}`)) calc(id); }); }
+
+    function copyMixInfo(id, unit, e) {
+        e.stopPropagation(); 
+        const drug = drugs.find(d => d.id === id);
+        const curAmt = document.getElementById(`amt_${id}`).value;
+        const curVol = document.getElementById(`vol_${id}`).value;
+        const text = `${drug.name} ${curAmt}${unit} + (   ) ${curVol}cc`;
+        navigator.clipboard.writeText(text).then(() => { alert(`[라벨 복사 완료]\n${text}`); });
+    }
+
+    function showInfo(id) {
+        const drug = drugs.find(d => d.id === id);
+        if(!drug) return;
+        document.getElementById('info-title').innerText = drug.name;
+        document.getElementById('info-content').innerText = drug.info || "정보가 없습니다.";
+        document.getElementById('info-panel').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+    }
+
+    function toggleCheckboxes(checkStatus) {
+        const checkboxes = document.querySelectorAll('#checklist-container input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = checkStatus);
+    }
+
+    function closeAllPopups() {
+        document.getElementById('selection-panel').style.display = 'none';
+        document.getElementById('free-calc-panel').style.display = 'none';
+        document.getElementById('vent-panel').style.display = 'none';
+        document.getElementById('hep-panel').style.display = 'none';
+        document.getElementById('info-panel').style.display = 'none';
+        document.getElementById('overlay').style.display = 'none';
+        
+        const checkboxes = document.querySelectorAll('#checklist-container input');
+        if(document.getElementById('selection-panel').style.display === 'block' || checkboxes.length > 0) {
+             activeDrugs = [];
+             checkboxes.forEach(cb => { if (cb.checked) activeDrugs.push(cb.value); });
+             if(activeDrugs.length > 0) localStorage.setItem('sch_icu_v73_active', JSON.stringify(activeDrugs));
+             renderTable();
+        }
+    }
+
+    function resetAllData() {
+        if(confirm("모든 입력값, Mix 설정, 약물 목록을 초기화하시겠습니까?")) {
+            localStorage.removeItem('sch_icu_inputs');
+            localStorage.removeItem('sch_icu_mix');
+            localStorage.removeItem('sch_icu_weight');
+            localStorage.removeItem('sch_icu_v73_active');
+            location.reload();
+        }
+    }
+
+    function copyEMR() {
+        let text = `[ICU Drug Infusion] BW: ${document.getElementById('bw').value}kg\n`;
+        let hasData = false;
+        drugs.forEach(d => {
+            if (currentDept === 'CCU' && ccuExclude.includes(d.id)) return;
+            if (currentDept === 'SICU' && sicuExclude.includes(d.id)) return;
+            if (!activeDrugs.includes(d.id)) return;
+            
+            const inputVal = parseFloat(savedInputs[d.id][currentMode]) || 0;
+            if (inputVal > 0) {
+                hasData = true;
+                const outVal = document.getElementById(`output_${d.id}`).innerText;
+                let doseUnit = d.unit.replace('Unit','U');
+                if (currentMode === 0) text += `- ${d.name}: ${inputVal} ${doseUnit} ➜ ${outVal} cc/hr\n`;
+                else text += `- ${d.name}: ${inputVal} cc/hr ➜ ${outVal} ${doseUnit}\n`;
+            }
+        });
+        if(!hasData) { alert("입력된 약물이 없습니다."); return; }
+        navigator.clipboard.writeText(text).then(() => { alert("📋 EMR 기록용 텍스트가 복사되었습니다!"); });
+    }
+
+    function renderChecklist() {
+        checklistContainer.innerHTML = '';
+        drugs.forEach(d => {
+            const checked = activeDrugs.includes(d.id) ? 'checked' : '';
+            let colorDot = d.color === 'red' ? '🔴' : (d.color === 'blue' ? '🔵' : '🟢');
+            checklistContainer.innerHTML += `<label class="check-item"><input type="checkbox" value="${d.id}" ${checked} style="margin-right:10px; transform:scale(1.3);">${colorDot} ${d.name}</label>`;
+        });
+    }
+
+    function openSettings() { document.getElementById('selection-panel').style.display = 'block'; document.getElementById('overlay').style.display = 'block'; }
+    
+    init();
+</script>
+</body>
+</html>
