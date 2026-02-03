@@ -179,14 +179,50 @@
         .empty-msg { text-align:center; padding:40px; color:#999; display:none; }
 
         @media print {
-            body { background: white; color: black; -webkit-print-color-adjust: exact; }
-            .header, .footer-bar, .overlay, .table-wrap { display: none !important; }
-            .popup-panel[style*="display: block"] { display: block !important; position: static !important; width: 100% !important; max-width: 100% !important; box-shadow: none !important; border: none !important; transform: none !important; left: 0 !important; top: 0 !important; padding: 0 !important; }
-            .btn-popup-close, .btn-vent-print { display: none !important; }
-            .vent-result-box, .pbw-display, .vt-item, .hep-protocol-box, .hep-action-box { border: 1px solid #000 !important; color: #000 !important; background: white !important; }
-            .gender-btn { border: 1px solid #000 !important; color: #000 !important; background: white !important; }
-            .gender-btn.active { background: #ddd !important; font-weight: 900 !important; border: 2px solid #000 !important; }
-        }
+    body { background: white; color: black; -webkit-print-color-adjust: exact; }
+    .header, .footer-bar, .overlay, .table-wrap { display: none !important; }
+
+    .popup-panel[style*="display: block"] {
+        display: block !important;
+        position: static !important;
+        width: 55mm !important;          /* 카드 가로 축소 */
+        max-width: 55mm !important;
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+        border-radius: 4px !important;
+        transform: none !important;
+        left: 0 !important;
+        top: 0 !important;
+        padding: 0 !important;
+    }
+
+    .btn-popup-close, .btn-vent-print { display: none !important; }
+
+    /* 타이틀 축소 */
+    .popup-panel h3 { font-size: 8px !important; margin: 4px 0 3px !important; }
+
+    /* 성별·신장 행 축소 */
+    .vent-row { margin-bottom: 3px !important; padding: 0 6px !important; }
+    .vent-label { font-size: 5.2px !important; width: 28px !important; flex-shrink: 0; }
+    .gender-btn { padding: 2px !important; font-size: 5.2px !important; }
+    .gender-btn.active { background: #ddd !important; font-weight: 900 !important; border: 2px solid #000 !important; }
+    .free-input { padding: 2px !important; font-size: 6.5px !important; height: auto !important; }
+
+    /* PBW 체중 글씨 줄임 */
+    .pbw-display { font-size: 10px !important; padding: 3px !important; margin: 4px 6px !important; }
+
+    /* 섹션 헤더 축소 */
+    .vent-section-header { font-size: 5.5px !important; padding: 2px 4px !important; margin-top: 4px !important; margin-bottom: 2px !important; border-left-width: 2.5px !important; }
+
+    /* VT 값 글씨 키움 */
+    .vt-item { padding: 2px 3px !important; margin: 0 6px !important; border: 1px solid #ccc !important; }
+    .vt-label { font-size: 5px !important; margin-bottom: 1px !important; }
+    .vt-val { font-size: 14px !important; }                /* ← 체중과 반대로 키움 */
+
+    .vt-grid { gap: 3px !important; }
+
+    hr { margin: 6px 6px !important; }
+}
     </style>
 </head>
 <body>
@@ -837,4 +873,5 @@
     init();
 </script>
 </body>
+
 </html>
