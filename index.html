@@ -80,8 +80,8 @@
             font-size: 0.8rem; letter-spacing: -0.5px; white-space: nowrap; 
             display: flex; align-items: center; justify-content: center;
         }
-        .btn-free-calc { background:#00c853; color:#fff; border:2px solid #00a152; }
         .btn-vent { background:#009688; color:#fff; border:2px solid #00796b; }
+        .btn-yale { background:#7e57c2; color:#fff; border:2px solid #5e35b1; }
         .btn-heparin { background:#ff9800; color:#fff; border:2px solid #f57c00; }
         .btn-setting { background:#fdd835; color:#000; border:2px solid #fbc02d; }
 
@@ -141,15 +141,9 @@
         .btn-reset-final { width:100%; padding:10px; background:#e53935; color:white; border:none; border-radius:8px; font-size:0.9rem; font-weight:700; cursor:pointer; margin-top:10px; opacity:0.9; }
         .btn-popup-close { width:100%; padding:10px; background:#555; color:white; border:none; border-radius:8px; margin-top:15px; font-size:1rem; font-weight:700; cursor:pointer; }
         
-        .free-section { background:var(--bg-blue); padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid #bbdefb; }
-        .free-section-title { display:block; font-size:0.8rem; font-weight:700; color:var(--sch-blue); margin-bottom:5px; text-align:left; }
-        .free-row, .vent-row { display:flex; align-items:center; gap:5px; margin-bottom:5px; }
+        .vent-row { display:flex; align-items:center; gap:5px; margin-bottom:5px; }
         .vent-row { justify-content: space-between; margin-bottom: 15px; }
         .free-input { flex:1; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:1.1rem; text-align:center; font-weight:700; background:#fff; color:#333; }
-        .free-select { flex:0.8; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:0.9rem; background:#fff; color:#333; }
-        .free-result-box { background:#e8f5e9; padding:15px; border-radius:8px; text-align:center; margin-top:10px; border:2px solid #4caf50; }
-        .free-res-val { font-size:2.2rem; font-weight:900; color:#2e7d32; display:block; line-height:1.2; }
-        .free-res-unit { font-size:1rem; font-weight:700; color:#1b5e20; }
         
         .vent-label { font-weight:700; color:var(--sch-blue); }
         .gender-btn { flex:1; padding:12px; border:1px solid #ccc; background:#f0f0f0; color:#666; cursor:pointer; font-weight:700; border-radius:6px; transition:0.2s; }
@@ -343,11 +337,11 @@
     <div class="control-top-row">
         <div class="weight-container">
             <span class="weight-label">체중(kg)</span>
-            <input type="number" id="bw" class="weight-input" value="60" oninput="saveWeight(); calcAll(); calcFree(); calcPBW(); calcHeparin();" step="0.5">
+            <input type="number" id="bw" class="weight-input" value="60" oninput="saveWeight(); calcAll(); calcPBW(); calcHeparin();" step="0.5">
         </div>
         <div class="btn-group">
-            <button class="btn-common btn-free-calc" onclick="openFreeCalc()">🧮 자유 계산기</button>
             <button class="btn-common btn-vent" onclick="openVentCalc()">🌬️ Ventilator</button>
+            <button class="btn-common btn-yale" onclick="openYaleScale()">💉 Yale<br>Scale</button>
             <button class="btn-common btn-heparin" onclick="openHeparinCalc()">🩸 Heparin</button>
             <button class="btn-common btn-setting" onclick="openSettings()">⚙️ 약물선택</button>
         </div>
@@ -388,48 +382,6 @@
 
 <div class="overlay" id="overlay" onclick="closeAllPopups()"></div>
 
-<div id="free-calc-panel" class="popup-panel">
-    <h3 style="text-align:center; margin-top:0; color:var(--sch-blue); margin-bottom:15px;">🧮 자유 계산기</h3>
-    <div class="free-section">
-        <span class="free-section-title">1. 약물 믹스 정보 (Mix)</span>
-        <div class="free-row">
-            <input type="number" id="free-amt" class="free-input" placeholder="약물량" oninput="calcFree()" step="10">
-            <select id="free-amt-unit" class="free-select" onchange="calcFree()">
-                <option value="mg">mg</option>
-                <option value="mcg">mcg</option>
-                <option value="IU">IU</option>
-                <option value="g">g</option>
-            </select>
-        </div>
-        <div class="free-row">
-            <input type="number" id="free-vol" class="free-input" placeholder="수액량" oninput="calcFree()" step="10">
-            <span style="font-weight:700; padding:0 10px; color:#555;">cc (ml)</span>
-        </div>
-    </div>
-    <div class="free-section" style="background:var(--bg-input-yellow); border-color:#ffe082;">
-        <span class="free-section-title" style="color:#f57f17;">2. 처방 정보 (Order)</span>
-        <div class="free-row">
-            <input type="number" id="free-dose" class="free-input" placeholder="처방 용량" oninput="calcFree()" step="0.01">
-        </div>
-        <div class="free-row">
-            <select id="free-dose-unit" class="free-select" onchange="calcFree()" style="flex:1;">
-                <option value="mcg/kg/min">mcg/kg/min</option>
-                <option value="mcg/kg/hr">mcg/kg/hr</option>
-                <option value="mg/hr">mg/hr</option>
-                <option value="mcg/min">mcg/min</option>
-                <option value="unit/min">Unit/min</option>
-                <option value="unit/hr">Unit/hr</option>
-            </select>
-        </div>
-    </div>
-    <div class="free-result-box">
-        <span style="font-size:0.9rem; font-weight:700; color:#1b5e20;">주입 속도 (Rate)</span>
-        <span id="free-result" class="free-res-val">0.00</span>
-        <span class="free-res-unit">cc/hr</span>
-    </div>
-    <button class="btn-popup-close" onclick="closeAllPopups()">닫기</button>
-</div>
-
 <div id="vent-panel" class="popup-panel">
     <h3 style="text-align:center; margin-top:0; color:#00796b; margin-bottom:15px;">🌬️ Ventilator Settings</h3>
     <div class="vent-row">
@@ -461,6 +413,343 @@
     <button class="btn-vent-print" onclick="window.print()">🖨️ 결과 출력 (Print)</button>
     <button class="btn-popup-close" onclick="closeAllPopups()">닫기</button>
 </div>
+
+<div id="yale-panel" class="popup-panel" style="max-width: 620px; width:95%; padding:0; height:90vh; overflow:auto;">
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+    /* ✅ 전역(:root, body) → #yale-panel 내부로 스코프 제한 */
+    #yale-panel {
+      --yale-blue: #154360;
+      --yale-accent: #2980b9;
+      --footer-bg: #2c3e50;
+      background: transparent;
+    }
+
+    /* 원래 body에 있던 스타일을 yale-panel 내부 래퍼에 적용 */
+    #yale-panel .yale-body {
+      font-family: 'Pretendard', sans-serif;
+      background-color: #e5e8e8;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+
+    #yale-panel .container {
+      width: 100%;
+      max-width: 550px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #yale-panel .header {
+      background: linear-gradient(135deg, var(--yale-blue) 0%, #21618c 100%);
+      color: white;
+      padding: 25px;
+      text-align: center;
+      border-bottom: 4px solid #aab7b8;
+    }
+
+    #yale-panel .header h1 { margin: 0; font-size: 1.5rem; letter-spacing: 0.5px; }
+    #yale-panel .header p { margin: 5px 0 0 0; font-size: 0.9rem; opacity: 0.8; }
+
+    #yale-panel .target-range {
+      margin-top: 8px;
+      font-size: 1rem;
+      color: #ffcdce;
+      font-weight: 800;
+      display: inline-block;
+      padding: 2px 12px;
+      border-radius: 20px;
+      background: rgba(0,0,0,0.1);
+    }
+
+    #yale-panel .content { padding: 25px 20px 10px 20px; }
+
+    #yale-panel .section {
+      background: #f8f9f9;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border: 1px solid #d5dbdb;
+    }
+
+    #yale-panel h2 {
+      font-size: 1.05rem;
+      color: var(--yale-blue);
+      margin: 0 0 15px 0;
+      border-left: 4px solid var(--yale-accent);
+      padding-left: 10px;
+      font-weight: 700;
+    }
+
+    #yale-panel label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #2c3e50;
+    }
+
+    #yale-panel input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #bdc3c7;
+      border-radius: 8px;
+      font-size: 1rem;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+    }
+
+    #yale-panel button {
+      width: 100%;
+      padding: 15px;
+      background: var(--yale-blue);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #yale-panel button:hover { background: var(--yale-accent); }
+
+    #yale-panel .result-box {
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 12px;
+      display: none;
+      line-height: 1.6;
+      font-size: 0.95rem;
+      color: white;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      animation: yaleFadeInUp 0.4s ease-out;
+    }
+
+    @keyframes yaleFadeInUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #yale-panel .res-success { background: linear-gradient(135deg, #27ae60, #16a085); }
+    #yale-panel .res-warning { background: linear-gradient(135deg, #f39c12, #d35400); }
+    #yale-panel .res-danger  { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+
+    #yale-panel .bold { font-weight: 900; text-decoration: underline; font-size: 1.1rem; }
+
+    #yale-panel .footer {
+      background: var(--footer-bg);
+      color: #ecf0f1;
+      padding: 25px 20px;
+      text-align: center;
+      border-top: 4px solid #f39c12;
+    }
+
+    #yale-panel .version-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.1);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      color: #f39c12;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    #yale-panel .copyright-text { font-size: 0.8rem; color: #bdc3c7; margin-bottom: 10px; }
+    #yale-panel .legal-note {
+      font-size: 0.7rem;
+      color: #7f8c8d;
+      line-height: 1.5;
+      text-align: justify;
+      text-align-last: center;
+    }
+
+    #yale-panel .small-inst { font-size: 0.85em; opacity: 0.95; line-height: 1.4; display: block; margin: 4px 0; }
+
+    /* 팝업 닫기 버튼(기존 계산기 스타일과 공존) */
+    #yale-panel .yale-close-wrap { padding: 0 20px 20px; }
+    #yale-panel .yale-close-btn { background:#34495e; }
+    #yale-panel .yale-close-btn:hover { background:#2c3e50; }
+  </style>
+
+  <div class="yale-body">
+    <div class="container">
+      <div class="header">
+        <h1>YALE INSULIN INFUSION PROTOCOL</h1>
+        <p>Concentration: 100 units / 100 mL (1:1)</p>
+        <div class="target-range">Target BST: 140 - 180 mg/dL</div>
+      </div>
+
+      <div class="content">
+        <div class="section">
+          <h2>1. 초기 시작 (Initiation)</h2>
+          <label>현재 BST (mg/dL)</label>
+          <input type="number" id="initBST" placeholder="수치 입력 (181 이상)" onkeydown="if(event.key === 'Enter'){calcStart()}">
+          <button onclick="calcStart()">초기 투여량 계산</button>
+          <div id="startRes" class="result-box"></div>
+        </div>
+
+        <div class="section">
+          <h2>2. 조절 및 대처 (Maintenance)</h2>
+          <label>현재 주입 속도 (cc/hr)</label>
+          <input type="number" id="curRate" step="0.1" placeholder="현재 cc/hr">
+          <div style="display: flex; gap: 10px;">
+            <div style="flex:1;"><label>이전 BST</label><input type="number" id="prevBST"></div>
+            <div style="flex:1;"><label>현재 BST</label><input type="number" id="currBST" onkeydown="if(event.key === 'Enter'){calcAdjust()}"></div>
+          </div>
+          <label>측정 간격 (시간)</label>
+          <input type="number" id="interval" value="1">
+          <button onclick="calcAdjust()" style="background: #34495e;">분석 및 속도조정</button>
+          <div id="adjRes" class="result-box"></div>
+          <div style="color: black; font-size: 0.8rem; font-weight: normal; margin-top: 8px; text-align: left; padding-left: 5px;">
+            * Target BST 3회 연속 도달 시 측정간격 q 1h → q 2h 변경
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div class="version-badge">Version 1.4</div>
+        <div class="copyright-text">Copyright © 2026 SCHC ICU 'TEAM PACEMAKER'. All rights reserved.</div>
+
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+
+        <div class="legal-note">
+          본 프로그램은 간호 업무 보조 도구입니다. 계산 결과는 참고용이며, 환자의 개별적인 임상 상태와 주치의 처방이 우선합니다. 최종 투약 확인 및 결정에 대한 책임은 사용자 본인에게 있습니다.
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <a href="https://doi.org/10.1177/10600280221074683" target="_blank"
+             style="color: #7f8c8d; font-size: 0.7rem; text-decoration: none; opacity: 0.8;">
+            Reference: 10.1177/10600280221074683
+          </a>
+        </div>
+
+        <div class="yale-close-wrap">
+          <button class="yale-close-btn" onclick="closeAllPopups()">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function calcStart() {
+      const bst = parseFloat(document.getElementById('initBST').value);
+      const res = document.getElementById('startRes');
+      if(!bst) { alert("BST 수치를 입력해주세요."); return; }
+
+      if(bst <= 180) {
+        res.style.display = "block";
+        res.className = "result-box res-warning";
+        res.innerHTML = "BST 180 이하는 프로토콜 시작 대상이 아닙니다.";
+        return;
+      }
+
+      const rate = (Math.round((bst / 100) * 2) / 2).toFixed(1);
+      let bolusText = "Bolus 없음";
+
+      if (bst >= 300) {
+        const bolus = Math.round(bst / 100);
+        const maxBolus = Math.min(bolus, 14);
+        bolusText = `RI <span class="bold">${maxBolus} units</span> IV Bolus 투여`;
+      }
+
+      res.style.display = "block";
+      res.className = "result-box res-success";
+      res.innerHTML = `➔ <b>${bolusText}</b><br>➔ 주입 속도: <b><span class="bold">${rate} cc/hr</span></b>`;
+    }
+
+    function calcAdjust() {
+      const rate = parseFloat(document.getElementById('curRate').value);
+      const prev = parseFloat(document.getElementById('prevBST').value);
+      const curr = parseFloat(document.getElementById('currBST').value);
+      const time = parseFloat(document.getElementById('interval').value);
+      const res = document.getElementById('adjRes');
+
+      if(isNaN(rate) || isNaN(prev) || isNaN(curr)) {
+        alert("모든 수치를 입력해주세요.");
+        return;
+      }
+
+      const change = (prev - curr) / time;
+
+      let delta;
+      if (rate < 3) delta = 0.5;
+      else if (rate <= 6) delta = 1.0;
+      else if (rate <= 9.5) delta = 1.5;
+      else if (rate <= 14.5) delta = 2.0;
+      else if (rate <= 19.5) delta = 3.0;
+      else if (rate <= 24.5) delta = 4.0;
+      else delta = 5.0;
+
+      res.style.display = "block";
+      res.className = "result-box";
+
+      if (curr < 50) {
+        res.classList.add("res-danger");
+        res.innerHTML = `🚨 <b>주입 즉시 중단 및 50% DW 25g IV 투여</b><br>
+        <span class="small-inst">
+          1. 15분 간격 BST 확인 및 70 미만 시 50% DW 25g IV 재투여<br>
+          2. BST 100↑ 확인 시 1시간 뒤 BST 재확인
+        </span>
+        ➔ 1시간 뒤 BST 100↑ 이면 <b>${(rate * 0.5).toFixed(1)} cc/hr</b> 재개`;
+      } else if (curr < 70) {
+        res.classList.add("res-warning");
+        res.innerHTML = `⚠️ <b>주입 즉시 중단 및 50% DW 12.5g IV 투여</b><br>
+        <span class="small-inst">
+          1. 15분 간격 BST 확인 및 70 미만 시 50% DW 12.5g IV 재투여<br>
+          2. BST 100↑ 확인 시 1시간 뒤 BST 재확인
+        </span>
+        ➔ 1시간 뒤 BST 100↑ 이면 <b>${(rate * 0.75).toFixed(1)} cc/hr</b> 재개`;
+      } else if (curr < 100) {
+        res.classList.add("res-warning");
+        res.innerHTML = `⚠️ <b>주입 즉시 중단</b><br>
+        <span class="small-inst">
+          1. 30분 간격 BST 확인 및 70 미만 시 50% DW 12.5g IV 투여<br>
+          2. BST 100↑ 확인 시 <b>${(rate * 0.75).toFixed(1)} cc/hr</b> 재개
+        </span>`;
+      } else {
+        let nextRate = rate;
+        let isHold = false;
+
+        if (curr >= 250) {
+          if (change < 0) nextRate = rate + 2 * delta;
+          else if (change <= 40) nextRate = rate + delta;
+          else if (change <= 80) nextRate = rate;
+          else if (change <= 120) nextRate = rate - delta;
+          else { nextRate = rate - 2 * delta; isHold = true; }
+        } else if (curr >= 180) {
+          if (change <= -40) nextRate = rate + 2 * delta;
+          else if (change <= 0) nextRate = rate + delta;
+          else if (change <= 40) nextRate = rate;
+          else if (change <= 80) nextRate = rate - delta;
+          else { nextRate = rate - 2 * delta; isHold = true; }
+        } else if (curr >= 140) {
+          if (change <= -21) nextRate = rate + delta;
+          else if (change <= 20) nextRate = rate;
+          else if (change <= 40) nextRate = rate - delta;
+          else { nextRate = rate - 2 * delta; isHold = true; }
+        } else {
+          if (change < 0) nextRate = rate;
+          else if (change <= 20) nextRate = rate - delta;
+          else { nextRate = rate - 2 * delta; isHold = true; }
+        }
+
+        if (nextRate < 0) nextRate = 0;
+        res.classList.add(isHold ? "res-warning" : "res-success");
+        res.innerHTML = `변화량: ${change.toFixed(1)} mg/dL/hr<br>${isHold ? "❗ <b>30분 HOLD 후 재개</b><br>" : ""}👉 다음 속도: <b><span class="bold">${nextRate.toFixed(1)} cc/hr</span></b>`;
+      }
+    }
+  </script>
+</div>
+
 
 <div id="hep-panel" class="popup-panel">
     <h3 style="text-align:center; margin-top:0; color:#e65100; margin-bottom:5px;">🩸 Heparin Protocol</h3>
@@ -736,11 +1025,6 @@
         document.getElementById('empty-msg').style.display = count === 0 ? 'block' : 'none';
     }
 
-    function openFreeCalc() {
-        document.getElementById('free-calc-panel').style.display = 'block';
-        document.getElementById('overlay').style.display = 'block';
-    }
-
     let ventGender = 'male';
     function openVentCalc() {
         document.getElementById('vent-panel').style.display = 'block';
@@ -765,6 +1049,11 @@
         document.getElementById('vt-8').innerText = Math.round(pbw * 8);
         document.getElementById('vt-4').innerText = Math.round(pbw * 4);
         document.getElementById('vt-6-ards').innerText = Math.round(pbw * 6);
+    }
+
+    function openYaleScale() {
+        document.getElementById('yale-panel').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
     }
 
     function openHeparinCalc() {
@@ -822,34 +1111,6 @@
         document.getElementById('hep-action-msg').innerText = msg;
     }
 
-    function calcFree() {
-        const amt = parseFloat(document.getElementById('free-amt').value) || 0;
-        const amtUnit = document.getElementById('free-amt-unit').value;
-        const vol = parseFloat(document.getElementById('free-vol').value) || 0;
-        const dose = parseFloat(document.getElementById('free-dose').value) || 0;
-        const doseUnit = document.getElementById('free-dose-unit').value;
-        const weight = parseFloat(document.getElementById('bw').value) || 0;
-        const resEl = document.getElementById('free-result');
-
-        if(amt === 0 || vol === 0 || dose === 0) { resEl.innerText = "0.00"; return; }
-
-        let mult = 1;
-        if(amtUnit === 'mg') mult = 1000;
-        else if(amtUnit === 'g') mult = 1000000;
-        else if(amtUnit === 'IU') mult = 1; 
-        else if(amtUnit === 'mcg') mult = 1;
-
-        let conc_mcg_cc = (amt * mult) / vol; 
-        let rate = 0;
-        if (doseUnit === 'mcg/kg/min') { if (weight > 0) rate = (dose * weight * 60) / conc_mcg_cc; }
-        else if (doseUnit === 'mcg/kg/hr') { if (weight > 0) rate = (dose * weight) / conc_mcg_cc; }
-        else if (doseUnit === 'mg/hr') { rate = (dose * 1000) / conc_mcg_cc; }
-        else if (doseUnit === 'mcg/min') { rate = (dose * 60) / conc_mcg_cc; }
-        else if (doseUnit === 'unit/min') { rate = (dose * 60) / conc_mcg_cc; }
-        else if (doseUnit === 'unit/hr') { rate = dose / conc_mcg_cc; }
-
-        resEl.innerText = rate.toFixed(2);
-    }
 
     function updateMix(id) {
         const newAmt = parseFloat(document.getElementById(`amt_${id}`).value);
@@ -952,8 +1213,8 @@
 
     function closeAllPopups() {
         document.getElementById('selection-panel').style.display = 'none';
-        document.getElementById('free-calc-panel').style.display = 'none';
         document.getElementById('vent-panel').style.display = 'none';
+        document.getElementById('yale-panel').style.display = 'none';
         document.getElementById('hep-panel').style.display = 'none';
         document.getElementById('info-panel').style.display = 'none';
         document.getElementById('overlay').style.display = 'none';
